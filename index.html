@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07080a">
+  <meta name="description" content="Stick Run — a neon industrial endless runner. Run. Jump. Survive.">
+  <title>Stick Run</title>
+  <link rel="icon" href="assets/images/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <div class="app" id="app">
+    <canvas id="game" class="game-canvas" aria-hidden="true"></canvas>
+    <noscript><p class="noscript">Stick Run needs JavaScript enabled.</p></noscript>
+
+    <!-- In-run HUD -->
+    <div class="hud" id="hud" hidden>
+      <div class="hud__stats">
+        <div class="hud__score">
+          <span class="hud__label">Score</span>
+          <span class="hud__value" id="hud-score">0</span>
+        </div>
+        <div class="hud__meta">
+          <span class="chip"><span class="chip__label">Best</span><b id="hud-best">0</b></span>
+          <span class="chip"><b id="hud-dist">0</b><span class="chip__unit">m</span></span>
+          <span class="chip chip--gold"><span class="coin-dot" aria-hidden="true"></span><b id="hud-coins">0</b></span>
+          <span class="chip chip--record" id="hud-record" hidden>New best</span>
+        </div>
+      </div>
+      <button class="icon-btn" id="btn-pause" type="button" aria-label="Pause game">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+      </button>
+    </div>
+
+    <div class="countdown" id="countdown" hidden aria-live="assertive">
+      <span class="countdown__text" id="countdown-text">3</span>
+    </div>
+
+    <!-- Touch controls -->
+    <div class="touch" id="touch" hidden>
+      <button class="touch__btn touch__btn--slide" id="touch-slide" type="button" aria-label="Slide (hold)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        <span>Slide</span>
+      </button>
+      <button class="touch__btn touch__btn--jump" id="touch-jump" type="button" aria-label="Jump">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>
+        <span>Jump</span>
+      </button>
+    </div>
+
+    <!-- Main menu -->
+    <section class="screen menu" id="screen-menu" aria-labelledby="logo">
+      <div class="menu__inner">
+        <header class="menu__brand">
+          <h1 class="logo" id="logo"><span class="logo__a">Stick</span><span class="logo__b">Run</span></h1>
+          <p class="tagline">Run. Jump. Survive.</p>
+        </header>
+        <div class="menu__preview">
+          <canvas class="preview-canvas" id="menu-preview" aria-label="Your runner" role="img"></canvas>
+        </div>
+        <div class="menu__actions">
+          <button class="btn btn--primary btn--xl" id="btn-play" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>
+            Play
+          </button>
+          <div class="menu__row">
+            <button class="btn btn--ghost" id="btn-customize" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4"/></svg>
+              Character
+            </button>
+            <button class="btn btn--ghost" id="btn-settings" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+              Settings
+            </button>
+          </div>
+          <div class="menu__stats">
+            <span class="stat-pill"><span>Best</span><b id="menu-best">0</b></span>
+            <span class="stat-pill stat-pill--gold"><span class="coin-dot" aria-hidden="true"></span><b id="menu-coins">0</b></span>
+          </div>
+          <p class="menu__hint">
+            <kbd>Space</kbd> / <kbd>↑</kbd> jump · <kbd>↓</kbd> slide · <kbd>Esc</kbd> pause
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pause -->
+    <section class="screen screen--overlay" id="screen-pause" role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden>
+      <div class="card card--narrow">
+        <h2 class="card__title" id="pause-title">Paused</h2>
+        <div class="stack">
+          <button class="btn btn--primary btn--block" id="btn-resume" type="button">Resume</button>
+          <button class="btn btn--ghost btn--block" id="btn-restart" type="button">Restart</button>
+          <button class="btn btn--ghost btn--block" id="btn-pause-home" type="button">Home</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Game over -->
+    <section class="screen screen--overlay" id="screen-over" role="dialog" aria-modal="true" aria-labelledby="over-title" hidden>
+      <div class="card card--over">
+        <p class="badge" id="over-record" hidden>New record</p>
+        <h2 class="card__title card__title--danger" id="over-title">Game over</h2>
+        <dl class="stats">
+          <div class="stats__item stats__item--main"><dt>Score</dt><dd id="over-score">0</dd></div>
+          <div class="stats__item"><dt>Distance</dt><dd><span id="over-dist">0</span><small>m</small></dd></div>
+          <div class="stats__item"><dt>Best</dt><dd id="over-best">0</dd></div>
+          <div class="stats__item"><dt>Coins</dt><dd class="gold">+<span id="over-coins">0</span></dd></div>
+        </dl>
+        <div class="stack">
+          <button class="btn btn--primary btn--block" id="btn-retry" type="button">Try again</button>
+          <button class="btn btn--ghost btn--block" id="btn-over-home" type="button">Home</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="screen screen--overlay" id="screen-settings" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+      <div class="card">
+        <div class="card__head">
+          <h2 class="card__title" id="settings-title">Settings</h2>
+          <button class="icon-btn icon-btn--sm" type="button" data-close aria-label="Close settings">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+        <ul class="settings">
+          <li class="setting"><span class="setting__text"><b>Sound effects</b><small>Jumps, coins, impacts</small></span>
+            <button class="switch" type="button" role="switch" data-setting="sound" aria-label="Sound effects"></button></li>
+          <li class="setting"><span class="setting__text"><b>Music</b><small>Background beat while running</small></span>
+            <button class="switch" type="button" role="switch" data-setting="music" aria-label="Music"></button></li>
+          <li class="setting"><span class="setting__text"><b>Blood effects</b><small>Stylised red splatter on impact</small></span>
+            <button class="switch" type="button" role="switch" data-setting="blood" aria-label="Blood effects"></button></li>
+          <li class="setting"><span class="setting__text"><b>Reduced effects</b><small>Fewer particles, no screen shake</small></span>
+            <button class="switch" type="button" role="switch" data-setting="reducedFx" aria-label="Reduced effects"></button></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Character customisation -->
+    <section class="screen screen--overlay" id="screen-customize" role="dialog" aria-modal="true" aria-labelledby="custom-title" hidden>
+      <div class="card card--wide">
+        <div class="card__head">
+          <h2 class="card__title" id="custom-title">Character</h2>
+          <button class="icon-btn icon-btn--sm" type="button" data-close aria-label="Close character panel">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+        <div class="custom">
+          <div class="custom__preview">
+            <canvas class="preview-canvas" id="custom-preview" aria-label="Character preview" role="img"></canvas>
+          </div>
+          <div class="custom__panel">
+            <h3 class="section-title">Face photo</h3>
+            <div class="face">
+              <div class="face__frame"><canvas id="face-preview" width="160" height="160" aria-label="Face photo preview" role="img"></canvas></div>
+              <div class="face__actions">
+                <input type="file" id="face-input" accept="image/jpeg,image/png,image/webp" hidden>
+                <button class="btn btn--ghost btn--sm" id="btn-upload" type="button">Upload photo</button>
+                <button class="btn btn--ghost btn--sm" id="btn-replace" type="button" hidden>Replace photo</button>
+                <button class="btn btn--primary btn--sm" id="btn-apply" type="button" disabled>Apply</button>
+                <button class="btn btn--danger btn--sm" id="btn-reset-face" type="button" disabled>Reset to default</button>
+              </div>
+            </div>
+            <p class="status" id="face-status" role="status">JPG, PNG or WebP up to 10 MB. Your photo never leaves this device.</p>
+
+            <h3 class="section-title">Skins <span class="section-title__aside"><span class="coin-dot" aria-hidden="true"></span><b id="skin-coins">0</b></span></h3>
+            <div class="skins" id="skins"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  </div>
+</body>
+</html>
