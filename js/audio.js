@@ -144,6 +144,10 @@ const SFX = {
     a.noise(t, 0.07, 0.22, 'lowpass', 500);
     a.tone(t, 140, 70, 0.08, 'sine', 0.18);
   },
+  glass: (a, t) => {
+    a.noise(t, 0.28, 0.32, 'highpass', 3200);
+    [2400, 3100, 3900, 2800].forEach((f, i) => a.tone(t + i * 0.025, f, f * 0.9, 0.08, 'triangle', 0.05));
+  },
   slide: (a, t) => a.noise(t, 0.22, 0.16, 'bandpass', 2200, 600),
   coin: (a, t) => {
     a.tone(t, 988, 988, 0.06, 'square', 0.06);

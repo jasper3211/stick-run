@@ -237,6 +237,11 @@ export class Game {
       for (const c of coins) this.fx.sparkle(c.x - this.distance + WORLD.playerX, c.h, '#ffd56e', s.reducedFx ? 4 : 8);
     }
 
+    for (const g of this.field.smash(box)) {
+      this.fx.shatter(g.x - this.distance + WORLD.playerX, Math.min(g.h, box.top), s.reducedFx);
+      this.audio.play('glass');
+    }
+
     this.fx.update(dt, dx);
     const hit = this.field.collide(box);
     if (hit) {

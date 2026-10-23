@@ -6,6 +6,7 @@ const MAX_DECALS = 36;
 const TAU = Math.PI * 2;
 const BLOOD = ['#ff2d3d', '#d1121f', '#ff4a55', '#9b0b16'];
 const SPARK = ['#ffffff', '#dfe6ee', '#c6ff3d'];
+const GLASS = ['#ffffff', '#d9f2ff', '#a8dcff'];
 const pick = (list) => list[(Math.random() * list.length) | 0];
 const rand = (a, b) => a + Math.random() * (b - a);
 
@@ -63,6 +64,27 @@ export class Effects {
     }
   }
 
+  /** Glass shards bursting forward from a pane the runner smashed through. */
+  shatter(x, height, reduced) {
+    const n = reduced ? 14 : 40;
+    for (let i = 0; i < n; i++) {
+      this.add({
+        x: x + rand(0, 12),
+        h: rand(4, height),
+        vx: rand(60, 460),
+        vy: rand(-60, 360),
+        life: rand(0.6, 1.1),
+        size: rand(2.5, 6),
+        color: pick(GLASS),
+        kind: 'shard',
+        rot: rand(0, TAU),
+        spin: rand(-14, 14),
+      });
+    }
+    this.flashColor = '220, 240, 255';
+    this.flash = Math.max(this.flash, reduced ? 0.05 : 0.12);
+  }
+
   sparkle(x, h, color = '#ffd56e', n = 8) {
     for (let i = 0; i < n; i++) {
       const a = (i / n) * TAU;
@@ -78,6 +100,7 @@ export class Effects {
       p.h += p.vy * dt;
       p.vy -= (p.light ? 300 : p.kind === 'mist' ? 0 : 1500) * dt;
       p.vx *= Math.max(0, 1 - 0.8 * dt);
+      if (p.spin) p.rot += p.spin * dt;
       if (p.h <= 0 && p.kind !== 'mist') {
         if (p.blood) {
           if (Math.random() < 0.5) this.addDecal(p.x, p.size);
@@ -134,6 +157,17 @@ export class Effects {
         ctx.moveTo(p.x, y);
         ctx.lineTo(p.x - p.vx * 0.03, y + p.vy * 0.03);
         ctx.stroke();
+      } else if (p.kind === 'shard') {
+        ctx.save();
+        ctx.translate(p.x, y);
+        ctx.rotate(p.rot);
+        ctx.beginPath();
+        ctx.moveTo(-p.size, p.size * 0.5);
+        ctx.lineTo(p.size * 0.3, -p.size);
+        ctx.lineTo(p.size, p.size * 0.7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
       } else if (p.kind === 'spark') {
         ctx.fillRect(p.x - p.size / 2, y - p.size / 2, p.size, p.size);
       } else {

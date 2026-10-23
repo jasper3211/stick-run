@@ -233,6 +233,44 @@ test('a runner that never reacts dies early (the course is not empty)', () => {
   assert.ok(died && d < 2500, `idle runner survived to ${d}`);
 });
 
+test('a ground saw blade kills on contact but can be jumped', () => {
+  const field = new ObstacleField(seeded(4));
+  field.items = [field.make('saw', 200)];
+  const p = new Player();
+  assert.ok(field.collide(p.box(215)), 'running into the blade is a crash');
+  p.h = 34; // just above the 27-unit blade
+  assert.equal(field.collide(p.box(227)), null);
+  p.h = 0;
+  assert.equal(field.collide(p.box(181)), null, 'empty corner beside the round blade is safe');
+});
+
+test('a crate with a blade on top cannot be stood on', () => {
+  const field = new ObstacleField(seeded(4));
+  field.items = [field.make('sawbox', 200)];
+  const p = new Player();
+  assert.equal(field.floorUnder(p.box(223), 50), 0, 'not a platform');
+  p.h = 48; // standing on the crate top = inside the blade
+  assert.ok(field.collide(p.box(223)));
+  p.h = 80;
+  assert.equal(field.collide(p.box(223)), null, 'clear above the blade');
+});
+
+test('glass panes never kill and shatter exactly once', () => {
+  const field = new ObstacleField(seeded(4));
+  field.items = [];
+  field.glass = [{ x: 200, w: 12, h: 120, broken: false }];
+  const p = new Player();
+  assert.equal(field.collide(p.box(200)), null);
+  assert.equal(field.smash(p.box(200)).length, 1);
+  assert.equal(field.smash(p.box(200)).length, 0);
+});
+
+test('glass panes are spawned in the gaps between hazards', () => {
+  const field = new ObstacleField(seeded(9));
+  for (let d = 0; d < 60000; d += 50) field.update(d, speedAt(d), 900);
+  assert.ok(field.spawnedGlass > 5, `only ${field.spawnedGlass} panes`);
+});
+
 test('collision is detected against a crate on the ground', () => {
   const field = new ObstacleField(seeded(3));
   field.items = [field.make('crate', 200)];

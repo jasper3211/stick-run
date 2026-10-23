@@ -134,6 +134,67 @@ function crusher(ctx, x, gy, o, t) {
   ctx.fillRect(x, bottom, w, 26);
 }
 
+/** Toothed circular saw spinning around (cx, cy); only the part above `clipY` is drawn. */
+function blade(ctx, cx, cy, r, t, clipY) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(cx - r - 4, cy - r - 4, r * 2 + 8, clipY - (cy - r - 4));
+  ctx.clip();
+  ctx.translate(cx, cy);
+  ctx.rotate(t * 14);
+  const teeth = 14;
+  ctx.beginPath();
+  for (let i = 0; i < teeth * 2; i++) {
+    const a = (i / (teeth * 2)) * TAU;
+    const rr = i % 2 ? r * 0.8 : r;
+    ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+  }
+  ctx.closePath();
+  ctx.fillStyle = '#d3d9e0';
+  ctx.fill();
+  ctx.strokeStyle = '#6f7782';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.fillStyle = '#9ba4ae';
+  ctx.beginPath();
+  ctx.arc(0, 0, r * 0.55, 0, TAU);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255, 45, 61, 0.85)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0, 0, r * 0.4, 0, TAU * 0.7);
+  ctx.stroke();
+  ctx.fillStyle = '#23272e';
+  ctx.beginPath();
+  ctx.arc(0, 0, r * 0.18, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+}
+
+function slot(ctx, x, y, w) {
+  ctx.fillStyle = '#111316';
+  ctx.fillRect(x, y - 2, w, 4);
+}
+
+export function drawGlass(ctx, x, gy, g) {
+  const top = gy - g.h;
+  ctx.fillStyle = 'rgba(170, 222, 255, 0.32)';
+  ctx.fillRect(x, top, g.w, g.h);
+  ctx.strokeStyle = 'rgba(235, 248, 255, 0.95)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(x + 0.75, top + 0.75, g.w - 1.5, g.h - 1.5);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+  ctx.beginPath();
+  ctx.moveTo(x + 3, top + 14);
+  ctx.lineTo(x + g.w - 3, top + 4);
+  ctx.moveTo(x + 3, top + 34);
+  ctx.lineTo(x + g.w - 3, top + 24);
+  ctx.stroke();
+  ctx.fillStyle = '#5c6571';
+  ctx.fillRect(x - 3, top - 4, g.w + 6, 4);
+  ctx.fillRect(x - 3, gy - 4, g.w + 6, 4);
+}
+
 export function drawObstacle(ctx, o, x, gy, t) {
   const h = o.top - o.bottom;
   switch (o.type) {
@@ -153,6 +214,17 @@ export function drawObstacle(ctx, o, x, gy, t) {
     case 'beam':
       crusher(ctx, x, gy, o, t);
       break;
+    case 'saw':
+      blade(ctx, x + o.w / 2, gy, o.blade.r, t, gy);
+      slot(ctx, x - 3, gy, o.w + 6);
+      break;
+    case 'sawbox': {
+      const boxTop = gy - (o.rectTop - o.bottom);
+      blade(ctx, x + o.w / 2, boxTop, o.blade.r, t, boxTop);
+      crate(ctx, x, boxTop, o.w, gy - boxTop);
+      slot(ctx, x + 6, boxTop, o.w - 12);
+      break;
+    }
   }
 }
 

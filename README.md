@@ -28,6 +28,8 @@ Touch controls appear automatically on touch devices.
 - The runner moves automatically; speed ramps up smoothly with distance.
 - **Crates** (single and stacked) are solid: you can land and run on top of them — only hitting their side ends the run.
 - **Barriers** and **spikes** must be jumped. **Crushers** reach up off-screen, so the only way past is to slide underneath.
+- **Saw blades** spin half-sunk in the floor, and **bladed crates** have a saw on top — jump both; you can't stand on a bladed crate.
+- **Glass panes** are harmless: run straight through and they shatter.
 - Sliding in mid-air slams the runner down; releasing the slide under a crusher keeps you down until it is safe to stand.
 - Hazards are spawned with a minimum gap based on the current speed and the action they require, so every course is clearable.
 - Score is distance-based (fixed simulation step, independent of frame rate). Best score and total coins are saved locally.
@@ -50,8 +52,8 @@ js/main.js            wiring: storage, audio, UI, input, game
 js/game.js            state machine, fixed-step loop, rendering
 js/config.js          gameplay tuning constants and skins
 js/player.js          physics, hitboxes, procedural stickman poses and drawing
-js/obstacles.js       fair spawner, collisions, platforms, coins
-js/obstacle-art.js    hazard and coin drawing
+js/obstacles.js       fair spawner, collisions, platforms, glass, coins
+js/obstacle-art.js    hazard, saw, glass and coin drawing
 js/background.js      parallax industrial skyline
 js/effects.js         bounded particles, splatter, shake, flash
 js/audio.js           Web Audio synthesised sound effects and music
@@ -69,7 +71,7 @@ tests/                headless gameplay tests (node:test)
 npm test
 ```
 
-This runs headless checks for the jump arc, double jump and flip, standing on crates, slide hitboxes, spawn-gap fairness, and an autopilot that must survive 25 generated courses.
+This runs headless checks for the jump arc, double jump and flip, standing on crates, saw blades, glass, slide hitboxes, spawn-gap fairness, and an autopilot that must survive 25 generated courses.
 
 The browser behaviour (screens at 360×640, 390×844, 430×932, 844×390, 768×1024, 1366×768 and 1920×1080; pause/resume/restart/home; touch and keyboard input; photo upload, persistence and reset; blood toggle; particle limits; hidden-tab pause; rotation mid-run) was checked with headless Chromium through Playwright (115 automated checks plus screenshot review). It was **not** tested on physical phones or in Safari/Firefox.
 

@@ -1,5 +1,5 @@
 import { WORLD, clamp, lerp } from './config.js';
-import { drawObstacle, drawCoin } from './obstacle-art.js';
+import { drawObstacle, drawCoin, drawGlass } from './obstacle-art.js';
 
 // h = hazard height for ground obstacles; overhead hazards start `gap` above the ground.
 export const TYPES = {
@@ -9,11 +9,24 @@ export const TYPES = {
   beam: { w: 92, h: 600, gap: 46, from: 1600, weight: 3, overhead: true },
   stack: { w: 46, h: 88, from: 5000, weight: 2, platform: true },
   spikes: { w: 68, h: 22, from: 8000, weight: 2 },
+  // Spinning saw half-sunk in the floor: deadly only inside its round blade.
+  saw: { w: 54, h: 27, from: 2500, weight: 3, blade: { cy: 0, r: 27 }, bladeOnly: true },
+  // A crate with a saw spinning out of its top: solid sides, and no standing on it.
+  sawbox: { w: 50, h: 70, body: 46, from: 6000, weight: 2, blade: { cy: 46, r: 24 } },
 };
+
+const GLASS = { w: 12, h: 120 }; // breakable pane: harmless, shatters when run through
 
 const FIRST_OBSTACLE_X = 1000;
 const COIN_R = 9;
 const STEP_UP = 6; // how far below a crate top the feet may be and still count as on top
+
+/** True when the runner's box touches a round blade (with a 3-unit forgiving margin). */
+function bladeHit(box, cx, cy, r) {
+  const nx = clamp(cx, box.left, box.right);
+  const nh = clamp(cy, box.bottom, box.top);
+  return (cx - nx) ** 2 + (cy - nh) ** 2 < (r - 3) ** 2;
+}
 
 /**
  * Minimum seconds of travel between the end of one hazard and the start of the next,
@@ -36,6 +49,8 @@ export class ObstacleField {
   reset() {
     this.items = [];
     this.coins = [];
+    this.glass = [];
+    this.spawnedGlass = 0;
     this.cursor = FIRST_OBSTACLE_X; // world x where the last hazard ends
     this.prev = null;
     this.overheadStreak = 0;
@@ -50,6 +65,7 @@ export class ObstacleField {
     const behind = distance - WORLD.playerX - 120;
     this.items = this.items.filter((o) => o.x + o.w > behind);
     this.coins = this.coins.filter((c) => !c.taken && c.x > behind);
+    this.glass = this.glass.filter((g) => !g.broken && g.x + g.w > behind);
   }
 
   pickType(at) {
@@ -80,14 +96,17 @@ export class ObstacleField {
 
     const group = [this.make(type, x)];
     // Later on, pair two low hazards into one wider jump (still clearable at base speed).
-    if (!spec.overhead && type !== 'stack' && this.cursor > 6000 && r() < 0.22) {
+    if (!spec.overhead && spec.h <= 50 && this.cursor > 6000 && r() < 0.22) {
       const second = r() < 0.5 ? 'crate' : 'barrier';
       group.push(this.make(second, x + spec.w));
     }
 
     this.items.push(...group);
     const last = group[group.length - 1];
-    if (this.prev) this.addGapCoins(gapStart, x, speed);
+    if (this.prev) {
+      this.addGapCoins(gapStart, x, speed);
+      this.addGlass(gapStart, x, speed);
+    }
     this.addHazardCoins(group, speed);
 
     this.cursor = last.x + last.w;
@@ -98,7 +117,36 @@ export class ObstacleField {
   make(type, x) {
     const t = TYPES[type];
     const bottom = t.overhead ? t.gap : 0;
-    return { type, x, w: t.w, bottom, top: bottom + t.h, overhead: !!t.overhead, platform: !!t.platform };
+    return {
+      type,
+      x,
+      w: t.w,
+      bottom,
+      top: bottom + t.h,
+      rectTop: bottom + (t.body ?? t.h), // solid box part (excludes a blade on top)
+      overhead: !!t.overhead,
+      platform: !!t.platform,
+      blade: t.blade || null,
+      bladeOnly: !!t.bladeOnly,
+    };
+  }
+
+  addGlass(from, to, speed) {
+    const gap = to - from;
+    if (gap < speed * 0.8 || this.random() > 0.3) return;
+    this.glass.push({ x: from + gap * 0.3, w: GLASS.w, h: GLASS.h, broken: false });
+    this.spawnedGlass++;
+  }
+
+  /** Breaks every glass pane the runner touches and returns the newly broken ones. */
+  smash(box) {
+    const hit = [];
+    for (const g of this.glass) {
+      if (g.broken || box.right <= g.x || box.left >= g.x + g.w || box.bottom >= g.h) continue;
+      g.broken = true;
+      hit.push(g);
+    }
+    return hit;
   }
 
   addGapCoins(from, to, speed) {
@@ -148,8 +196,10 @@ export class ObstacleField {
       const insetX = 4;
       // Crates are only deadly from the side; their top is something to stand on.
       const insetTop = o.platform ? STEP_UP : o.type === 'spikes' ? 7 : 3;
+      if (o.blade && bladeHit(box, o.x + o.w / 2, o.bottom + o.blade.cy, o.blade.r)) return o;
+      if (o.bladeOnly) continue;
       if (box.right - insetX <= o.x || box.left + insetX >= o.x + o.w) continue;
-      if (box.bottom >= o.top - insetTop || box.top - 3 <= o.bottom) continue;
+      if (box.bottom >= o.rectTop - insetTop || box.top - 3 <= o.bottom) continue;
       return o;
     }
     return null;
@@ -183,6 +233,11 @@ export class ObstacleField {
       const sx = o.x + shift;
       if (sx > viewW + 20 || sx + o.w < -20) continue;
       drawObstacle(ctx, o, sx, groundY, t);
+    }
+    for (const g of this.glass) {
+      const sx = g.x + shift;
+      if (sx > viewW + 20 || sx + g.w < -20) continue;
+      drawGlass(ctx, sx, groundY, g);
     }
     for (const c of this.coins) {
       const sx = c.x + shift;
