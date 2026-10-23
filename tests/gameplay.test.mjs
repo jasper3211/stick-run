@@ -233,13 +233,13 @@ test('a runner that never reacts dies early (the course is not empty)', () => {
   assert.ok(died && d < 2500, `idle runner survived to ${d}`);
 });
 
-test('a ground saw blade kills on contact but can be jumped', () => {
+test('a saw blade on a post kills on contact but can be jumped', () => {
   const field = new ObstacleField(seeded(4));
   field.items = [field.make('saw', 200)];
   const p = new Player();
   assert.ok(field.collide(p.box(215)), 'running into the blade is a crash');
-  p.h = 34; // just above the 27-unit blade
-  assert.equal(field.collide(p.box(227)), null);
+  p.h = 62; // just above the blade (centre 33 + radius 25)
+  assert.equal(field.collide(p.box(225)), null);
   p.h = 0;
   assert.equal(field.collide(p.box(181)), null, 'empty corner beside the round blade is safe');
 });

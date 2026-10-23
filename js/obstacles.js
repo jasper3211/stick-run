@@ -9,10 +9,10 @@ export const TYPES = {
   beam: { w: 92, h: 600, gap: 46, from: 1600, weight: 3, overhead: true },
   stack: { w: 46, h: 88, from: 5000, weight: 2, platform: true },
   spikes: { w: 68, h: 22, from: 8000, weight: 2 },
-  // Spinning saw half-sunk in the floor: deadly only inside its round blade.
-  saw: { w: 54, h: 27, from: 2500, weight: 3, blade: { cy: 0, r: 27 }, bladeOnly: true },
+  // Spinning saw blade on a short post: deadly only inside its round blade.
+  saw: { w: 50, h: 58, from: 1200, weight: 4, blade: { cy: 33, r: 25 }, bladeOnly: true },
   // A crate with a saw spinning out of its top: solid sides, and no standing on it.
-  sawbox: { w: 50, h: 70, body: 46, from: 6000, weight: 2, blade: { cy: 46, r: 24 } },
+  sawbox: { w: 50, h: 70, body: 46, from: 3500, weight: 3, blade: { cy: 46, r: 24 } },
 };
 
 const GLASS = { w: 12, h: 120 }; // breakable pane: harmless, shatters when run through
@@ -133,7 +133,7 @@ export class ObstacleField {
 
   addGlass(from, to, speed) {
     const gap = to - from;
-    if (gap < speed * 0.8 || this.random() > 0.3) return;
+    if (gap < speed * 0.8 || this.random() > 0.4) return;
     this.glass.push({ x: from + gap * 0.3, w: GLASS.w, h: GLASS.h, broken: false });
     this.spawnedGlass++;
   }

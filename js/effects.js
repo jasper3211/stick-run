@@ -85,6 +85,11 @@ export class Effects {
     this.flash = Math.max(this.flash, reduced ? 0.05 : 0.12);
   }
 
+  /** A single falling blood drop (trail from a flying body part). */
+  drip(x, h) {
+    this.add({ x, h, vx: rand(-40, 40), vy: rand(-20, 60), life: 0.8, size: rand(1.4, 2.6), color: pick(BLOOD), kind: 'drop', blood: true });
+  }
+
   sparkle(x, h, color = '#ffd56e', n = 8) {
     for (let i = 0; i < n; i++) {
       const a = (i / n) * TAU;

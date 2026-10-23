@@ -247,7 +247,7 @@ function deadPose() {
 
 /* -------------------------------------------------------------- drawing -- */
 
-const INK = '#0a0a0c';
+export const INK = '#0a0a0c';
 const INK_BACK = '#34383f'; // far-side limbs, for a hint of depth
 
 function strokeParts(ctx, parts, color) {
@@ -261,7 +261,7 @@ function strokeParts(ctx, parts, color) {
   ctx.stroke(path);
 }
 
-function drawHead(ctx, pose, skin, face) {
+export function drawHead(ctx, pose, skin, face) {
   const r = HEAD_R;
   ctx.save();
   ctx.translate(pose.head.x, pose.head.y);

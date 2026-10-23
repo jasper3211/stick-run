@@ -7,7 +7,7 @@
 ES modules and IndexedDB do not work reliably from `file://`, so serve the folder over HTTP:
 
 ```bash
-python3 -m http.server 8080      # or: npm start
+python3 serve.py                 # or: npm start  (no-cache dev server)
 # then open http://localhost:8080
 ```
 
@@ -28,7 +28,7 @@ Touch controls appear automatically on touch devices.
 - The runner moves automatically; speed ramps up smoothly with distance.
 - **Crates** (single and stacked) are solid: you can land and run on top of them — only hitting their side ends the run.
 - **Barriers** and **spikes** must be jumped. **Crushers** reach up off-screen, so the only way past is to slide underneath.
-- **Saw blades** spin half-sunk in the floor, and **bladed crates** have a saw on top — jump both; you can't stand on a bladed crate.
+- **Saw blades** spin on a short post, and **bladed crates** have a saw on top — jump both; you can't stand on a bladed crate. Touching a blade tears the runner apart.
 - **Glass panes** are harmless: run straight through and they shatter.
 - Sliding in mid-air slams the runner down; releasing the slide under a crusher keeps you down until it is safe to stand.
 - Hazards are spawned with a minimum gap based on the current speed and the action they require, so every course is clearable.
@@ -55,7 +55,8 @@ js/player.js          physics, hitboxes, procedural stickman poses and drawing
 js/obstacles.js       fair spawner, collisions, platforms, glass, coins
 js/obstacle-art.js    hazard, saw, glass and coin drawing
 js/background.js      parallax industrial skyline
-js/effects.js         bounded particles, splatter, shake, flash
+js/effects.js         bounded particles, splatter, shards, shake, flash
+js/gibs.js            blade deaths: body pieces that fly apart and settle
 js/audio.js           Web Audio synthesised sound effects and music
 js/storage.js         localStorage settings, IndexedDB photo storage
 js/face.js            photo validation and cropping

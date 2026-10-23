@@ -134,39 +134,34 @@ function crusher(ctx, x, gy, o, t) {
   ctx.fillRect(x, bottom, w, 26);
 }
 
-/** Toothed circular saw spinning around (cx, cy); only the part above `clipY` is drawn. */
+/** Spinning saw blade with broad pointed teeth; only the part above `clipY` is drawn. */
 function blade(ctx, cx, cy, r, t, clipY) {
   ctx.save();
   ctx.beginPath();
   ctx.rect(cx - r - 4, cy - r - 4, r * 2 + 8, clipY - (cy - r - 4));
   ctx.clip();
   ctx.translate(cx, cy);
-  ctx.rotate(t * 14);
-  const teeth = 14;
+  ctx.rotate(t * 12);
+  const teeth = 9;
+  const step = TAU / teeth;
   ctx.beginPath();
-  for (let i = 0; i < teeth * 2; i++) {
-    const a = (i / (teeth * 2)) * TAU;
-    const rr = i % 2 ? r * 0.8 : r;
-    ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+  for (let i = 0; i < teeth; i++) {
+    const a = i * step;
+    ctx.lineTo(Math.cos(a) * r * 0.62, Math.sin(a) * r * 0.62); // gullet
+    ctx.lineTo(Math.cos(a + step * 0.62) * r, Math.sin(a + step * 0.62) * r); // tooth tip, raked forward
   }
   ctx.closePath();
-  ctx.fillStyle = '#d3d9e0';
+  const g = ctx.createRadialGradient(-r * 0.25, -r * 0.25, r * 0.1, 0, 0, r);
+  g.addColorStop(0, '#eef0f3');
+  g.addColorStop(1, '#a3abb4');
+  ctx.fillStyle = g;
   ctx.fill();
-  ctx.strokeStyle = '#6f7782';
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = '#7a828c';
+  ctx.lineWidth = 1.2;
   ctx.stroke();
-  ctx.fillStyle = '#9ba4ae';
+  ctx.fillStyle = '#5a3a22';
   ctx.beginPath();
-  ctx.arc(0, 0, r * 0.55, 0, TAU);
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 45, 61, 0.85)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.4, 0, TAU * 0.7);
-  ctx.stroke();
-  ctx.fillStyle = '#23272e';
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.18, 0, TAU);
+  ctx.arc(0, 0, r * 0.15, 0, TAU);
   ctx.fill();
   ctx.restore();
 }
@@ -214,10 +209,16 @@ export function drawObstacle(ctx, o, x, gy, t) {
     case 'beam':
       crusher(ctx, x, gy, o, t);
       break;
-    case 'saw':
-      blade(ctx, x + o.w / 2, gy, o.blade.r, t, gy);
-      slot(ctx, x - 3, gy, o.w + 6);
+    case 'saw': {
+      const cx = x + o.w / 2;
+      const cy = gy - o.blade.cy;
+      ctx.fillStyle = '#7d8590';
+      ctx.fillRect(cx - 3, cy, 6, o.blade.cy);
+      ctx.fillStyle = '#3a3f47';
+      ctx.fillRect(cx - 12, gy - 4, 24, 4);
+      blade(ctx, cx, cy, o.blade.r, t, gy);
       break;
+    }
     case 'sawbox': {
       const boxTop = gy - (o.rectTop - o.bottom);
       blade(ctx, x + o.w / 2, boxTop, o.blade.r, t, boxTop);

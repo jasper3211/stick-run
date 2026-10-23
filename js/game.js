@@ -3,6 +3,7 @@ import { Player, drawFigure, drawShadow, drawPreview } from './player.js';
 import { ObstacleField } from './obstacles.js';
 import { Effects } from './effects.js';
 import { Background } from './background.js';
+import { Gibs } from './gibs.js';
 
 const MAX_DPR = 2;
 const DEATH_TIME = 1.05;
@@ -24,6 +25,7 @@ export class Game {
     this.field = new ObstacleField();
     this.fx = new Effects();
     this.bg = new Background();
+    this.gibs = new Gibs();
     this.face = null; // applied face photo (canvas)
     this.previewFace = undefined; // pending photo shown only in previews
     this.previews = [];
@@ -45,6 +47,8 @@ export class Game {
     this.player.reset();
     this.field.reset();
     this.fx.reset();
+    this.gibs.reset();
+    this.ripped = false;
     this.distance = 0;
     this.speed = WORLD.baseSpeed;
     this.run = { score: 0, coins: 0, record: false, committed: false, nextPulse: 250 };
@@ -177,7 +181,7 @@ export class Game {
     this.render();
 
     // Sleep when nothing moves: paused, or the game-over splatter has settled.
-    if (this.state === 'paused' || (this.state === 'gameover' && this.fx.idle)) this.stopLoop();
+    if (this.state === 'paused' || (this.state === 'gameover' && this.fx.idle && this.gibs.idle)) this.stopLoop();
   }
 
   update(dt) {
@@ -197,6 +201,7 @@ export class Game {
         break;
       case 'gameover':
         this.fx.update(dt, 0);
+        this.gibs.update(dt, 0);
         break;
     }
   }
@@ -224,6 +229,7 @@ export class Game {
     this.scroll += dx;
 
     const p = this.player;
+    this.livePose = p.pose(); // remembered so a blade death can split this exact pose
     const blocked = this.field.overheadAbove(p.box(this.distance, true));
     const floor = this.field.floorUnder(p.box(this.distance), p.h);
     for (const e of p.update(dt, this.speed, blocked, floor)) this.audio.play(e);
@@ -270,6 +276,12 @@ export class Game {
     this.audio.stopMusic();
     this.audio.play('hit');
     this.player.kill();
+    if (hit.blade) {
+      // Blades cut the runner apart instead of knocking it over.
+      this.ripped = true;
+      const drip = s.blood ? (x, h) => this.fx.drip(x, h) : null;
+      this.gibs.burst(this.livePose, WORLD.playerX, box.bottom, { onDrip: s.reducedFx ? null : drip });
+    }
     this.freezeT = s.reducedFx ? 0 : 0.09;
     this.dyingT = 0;
     const impactH = Math.max(box.bottom + 10, Math.min(box.top - 10, (Math.max(box.bottom, hit.bottom) + Math.min(box.top, hit.top)) / 2));
@@ -287,6 +299,7 @@ export class Game {
     this.distance += dx;
     this.scroll += dx;
     this.player.update(dt, 0, false, this.field.floorUnder(this.player.box(this.distance), this.player.h));
+    this.gibs.update(dt, dx);
     this.fx.update(dt, dx);
     if (this.dyingT >= DEATH_TIME) this.gameOver();
   }
@@ -343,8 +356,12 @@ export class Game {
       this.fx.drawDecals(ctx, gy);
       const p = this.player;
       const x = WORLD.playerX + p.deathX;
-      drawShadow(ctx, x, gy, p.h);
-      drawFigure(ctx, x, gy - p.h, p.pose(), this.skin, this.face, p.angle());
+      if (this.ripped) {
+        this.gibs.draw(ctx, gy, this.skin, this.face);
+      } else {
+        drawShadow(ctx, x, gy, p.h);
+        drawFigure(ctx, x, gy - p.h, p.pose(), this.skin, this.face, p.angle());
+      }
       this.fx.draw(ctx, gy);
     }
     ctx.setTransform(k, 0, 0, k, 0, 0);
